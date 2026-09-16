@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Keep only source-named media out of git; the web-ready hero asset is deployed.
+「世界正在变好」*.mp4
+
+# Temporary files and test artifacts
+/tmp/
+
