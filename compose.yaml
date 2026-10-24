@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: nishiki-website:local
+    image: nishiki-website:security-20261022
     restart: unless-stopped
     init: true
     environment:
@@ -33,7 +33,7 @@ services:
       - tunnel
 
   cloudflared:
-    image: cloudflare/cloudflared:2026.7.2
+    image: cloudflare/cloudflared@sha256:faa8e0a1475f137c910be6025f43c8e4092fdd35461b31e19fd1390657a1ff39
     restart: unless-stopped
     command:
       - tunnel
