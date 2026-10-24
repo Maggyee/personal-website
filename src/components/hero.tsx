@@ -1,80 +1,89 @@
 import Image from "next/image";
-import { HeroVideo } from "@/components/hero-video";
+import { HeroCharacter } from "@/components/hero-character";
+import { Snow } from "@/components/snow";
 import { profile } from "@/content/profile";
 
 export function Hero() {
   return (
-    <section
-      id="hero"
-      className="hero-section relative isolate h-[100svh] overflow-hidden bg-[color:var(--bg)]"
-    >
+    <section id="hero" className="hero">
       <span
         id="header-scroll-sentinel"
         className="pointer-events-none absolute left-0 top-3 h-px w-px"
         aria-hidden
       />
 
-      <div className="hero-backdrop hero-scroll-bg absolute inset-[-8%] -z-20" aria-hidden>
-        <HeroVideo />
+      <div className="scene" aria-hidden>
+        <div className="scene-frame">
+          <Image
+            src="/scene/street-day.jpg"
+            alt=""
+            fill
+            sizes="(max-aspect-ratio: 16/9) 178vh, 100vw"
+            className="scene-img scene-day"
+          />
+          <Image
+            src="/scene/street-night.jpg"
+            alt=""
+            fill
+            priority
+            sizes="(max-aspect-ratio: 16/9) 178vh, 100vw"
+            className="scene-img scene-night"
+          />
+          <span className="scene-lamp" />
+          <span className="scene-lamp-pool" />
+          <span className="scene-lamp-far" />
+        </div>
+        <div className="scene-shade" />
       </div>
 
-      <div
-        className="hero-overlay absolute inset-0 -z-10"
-        aria-hidden
-      />
+      <Snow layer="back" />
 
-      <div
-        className="hero-atmosphere hero-scroll-atmosphere pointer-events-none absolute inset-0 -z-[5]"
-        aria-hidden
-      />
-
-      <div className="relative mx-auto grid h-full min-h-0 w-full max-w-[88rem] grid-rows-[auto_minmax(0,1fr)] gap-2 px-6 pb-8 pt-24 sm:gap-3 sm:px-9 sm:pb-10 sm:pt-28 lg:grid-cols-[minmax(0,1fr)_minmax(280px,42%)] lg:grid-rows-1 lg:items-center lg:gap-8 lg:px-14 lg:pb-14 lg:pt-24">
-        <div className="hero-scroll-copy relative z-10 max-w-xl self-start lg:self-center">
-          <div className="hero-enter-copy">
-            <p className="section-kicker mb-3 sm:mb-4">产品 · AI · 工程</p>
-            <h1 className="font-display text-[2.5rem] font-semibold leading-none tracking-tight text-[color:var(--text)] sm:text-6xl md:text-7xl">
-              {profile.name}
-            </h1>
-            <p className="mt-4 max-w-md text-base leading-relaxed text-[color:var(--text)]/90 sm:mt-6 sm:text-xl">
-              {profile.tagline}
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3 sm:mt-8">
-              <a href="#works" className="primary-action">
-                查看作品
-              </a>
-              <a
-                href={profile.blogUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="secondary-action"
+      <div className="hero-inner site-container">
+        <div className="hero-copy">
+          <p className="hero-kicker hero-rise" style={{ "--d": "0.15s" } as React.CSSProperties}>
+            {profile.kicker}
+          </p>
+          <h1 className="hero-title" aria-label={profile.name}>
+            {[...profile.name].map((letter, index) => (
+              <span
+                key={index}
+                aria-hidden
+                style={{ "--i": index } as React.CSSProperties}
               >
-                博客<span className="external-mark" aria-hidden>↗</span>
-              </a>
-            </div>
+                {letter}
+              </span>
+            ))}
+          </h1>
+          <p className="hero-tagline hero-rise" style={{ "--d": "0.75s" } as React.CSSProperties}>
+            {profile.tagline}
+          </p>
+          <div className="hero-actions hero-rise" style={{ "--d": "0.95s" } as React.CSSProperties}>
+            <a
+              href={profile.blogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="primary-action"
+            >
+              去博客看看<span className="external-mark" aria-hidden>↗</span>
+            </a>
+            <a href="#blog" className="secondary-action">
+              先在这逛逛
+            </a>
           </div>
         </div>
 
-        <div className="hero-scroll-art pointer-events-none relative mx-auto h-full min-h-0 w-full max-w-[16rem] sm:max-w-sm lg:mx-0 lg:h-[min(72svh,700px)] lg:max-w-none">
-          <div className="hero-enter-art relative h-full w-full">
-            <div className="absolute inset-x-8 bottom-0 h-16 rounded-[100%] bg-[radial-gradient(circle,rgba(0,103,255,0.28),transparent_70%)] blur-2xl sm:h-24" />
-            <Image
-              src="/character/casual-fandisc-nishiki.png"
-              alt="Nishiki 常服立绘"
-              fill
-              priority
-              sizes="(max-width: 1024px) 60vw, 42vw"
-              className="object-contain object-bottom drop-shadow-[0_20px_50px_rgba(0,0,0,0.55)]"
-            />
-          </div>
-        </div>
+        <HeroCharacter />
       </div>
 
-      <a
-        href="#works"
-        className="hero-scroll-cue absolute bottom-5 left-6 z-20 hidden items-center gap-3 text-xs tracking-[0.18em] text-[color:var(--muted)] sm:bottom-7 sm:left-9 lg:inline-flex lg:left-14"
-      >
-        <span>向下</span>
-        <span className="scroll-cue-line" aria-hidden />
+      <Snow layer="front" />
+
+      <p className="hero-vertical" aria-hidden>
+        {profile.verticalLine}
+      </p>
+
+      <a href="#blog" className="hero-scroll-cue">
+        <span>往下走走</span>
+        <span className="scroll-cue-track" aria-hidden />
       </a>
     </section>
   );

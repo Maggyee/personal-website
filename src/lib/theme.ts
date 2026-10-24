@@ -10,14 +10,17 @@ export const themes: Record<
   }
 > = {
   night: {
-    label: "夜色",
-    description: "深蓝近黑",
+    label: "雪夜",
+    description: "夜晚的雪街",
   },
   ice: {
-    label: "冰蓝",
-    description: "浅冰蓝",
+    label: "晴日",
+    description: "白天的雪街",
   },
 };
+
+// Dispatched on window whenever the theme changes, so effects can react to it.
+export const THEME_CHANGE_EVENT = "nishiki-theme-change";
 
 export function isThemeId(value: string | null | undefined): value is ThemeId {
   return value === "night" || value === "ice";

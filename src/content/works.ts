@@ -2,55 +2,41 @@ export type Work = {
   slug: string;
   title: string;
   summary: string;
-  year: string;
-  category: string;
+  stack: string;
   href: string;
-  cover: string;
+  // Omit to render the illustrated cover instead of a screenshot.
+  cover?: string;
   coverAlt: string;
-  language: string;
-  visibility: "公开" | "私有";
-  featured?: boolean;
 };
 
 export const works: Work[] = [
   {
-    slug: "nishiki-trader",
-    title: "Nishiki Trader",
+    slug: "nishiki-flutter",
+    title: "Nishiki Blog Reader",
     summary:
-      "连接多 Agent 研究、机器学习信号与 NautilusTrader 执行层的个人量化交易系统；当前以只读监控、证据链和风险边界为核心。",
-    year: "2026",
-    category: "量化研究系统",
-    href: "https://github.com/Maggyee/Nishiki-Trader",
-    cover: "/works/nishiki-trader/cover.png",
-    coverAlt: "Nishiki Trader 只读运维控制台界面",
-    language: "Python",
-    visibility: "私有",
-    featured: true,
+      "想在手机上舒服地读自己的博客，就用 Flutter 写了个阅读器：订阅 RSS、收藏文章、调字体，深色模式也安排上了。",
+    stack: "Flutter · 阅读器",
+    href: "https://github.com/Maggyee/nishiki-flutter",
+    cover: "/works/nishiki-flutter/cover.png",
+    coverAlt: "Nishiki Blog Reader 的手机界面",
   },
   {
     slug: "pmstudio",
     title: "PM Studio",
     summary:
-      "把一句产品想法或一份 PRD 整理成可评审的产品包，覆盖需求、原型结构、竞品、市场、路线图与执行摘要。",
-    year: "2026",
-    category: "AI 产品工具",
+      "丢一句产品点子进去，它帮你整理出需求、竞品和路线图，最后打包成一份能拿去讨论的方案。",
+    stack: "AI · 产品工具",
     href: "https://github.com/Maggyee/pmstudio",
     cover: "/works/pmstudio/cover.png",
-    coverAlt: "PM Studio 产品规划工作台首页",
-    language: "TypeScript",
-    visibility: "公开",
+    coverAlt: "PM Studio 首页",
   },
   {
-    slug: "nishiki-flutter",
-    title: "Nishiki Blog Reader",
+    slug: "nishiki-trader",
+    title: "Nishiki Trader",
     summary:
-      "面向 WordPress 与 RSS 的 Flutter 博客阅读器，串联搜索、分类、收藏、字体调整与阅读进度等跨端体验。",
-    year: "2026",
-    category: "跨端阅读器",
-    href: "https://github.com/Maggyee/nishiki-flutter",
-    cover: "/works/nishiki-flutter/cover.png",
-    coverAlt: "Nishiki Blog Reader 跨端阅读器界面展示",
-    language: "Dart",
-    visibility: "公开",
+      "对金融一直有兴趣，就试着搭了个量化研究系统：几个 AI Agent 负责研究，机器学习给信号，目前只看不下单。",
+    stack: "Python · 量化",
+    href: "https://github.com/Maggyee/Nishiki-Trader",
+    coverAlt: "Nishiki Trader 的示意封面：一条价格走势线",
   },
 ];

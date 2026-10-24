@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import {
+  THEME_CHANGE_EVENT,
   THEME_STORAGE_KEY,
   type ThemeId,
   isThemeId,
@@ -20,7 +21,6 @@ type ThemeContextValue = {
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
-const THEME_CHANGE_EVENT = "nishiki-theme-change";
 
 function applyTheme(theme: ThemeId) {
   const root = document.documentElement;

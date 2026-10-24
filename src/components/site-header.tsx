@@ -7,10 +7,14 @@ import { profile } from "@/content/profile";
 import { themes } from "@/lib/theme";
 
 const nav = [
-  { href: "#works", id: "works", label: "作品" },
+  { href: "#blog", id: "blog", label: "文章" },
+  { href: "#music", id: "music", label: "低音区" },
+  { href: "#works", id: "works", label: "小东西" },
   { href: "#about", id: "about", label: "关于" },
   { href: profile.blogUrl, label: "博客", external: true },
 ] as const;
+
+const sectionIds = ["hero", ...nav.flatMap((item) => ("id" in item ? [item.id] : []))];
 
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
@@ -30,7 +34,7 @@ export function SiteHeader() {
   }, []);
 
   useEffect(() => {
-    const sections = ["hero", "works", "about"]
+    const sections = sectionIds
       .map((id) => document.getElementById(id))
       .filter((node): node is HTMLElement => Boolean(node));
     if (sections.length === 0) return;
@@ -130,7 +134,8 @@ export function SiteHeader() {
             onClick={toggleTheme}
             className="theme-toggle"
             data-theme={theme}
-            aria-label={`切换主题，当前 ${themes[theme].label}`}
+            aria-label={`切换主题，当前：${themes[theme].label}`}
+            title={`切换到${themes[theme === "night" ? "ice" : "night"].label}`}
           >
             <span className="theme-toggle-thumb" aria-hidden />
             <svg
