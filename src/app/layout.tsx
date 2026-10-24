@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import {
-  Fraunces,
-  Geist,
-  Noto_Sans_SC,
-  Noto_Serif_SC,
-} from "next/font/google";
+import { Fraunces, Geist, Noto_Serif_SC } from "next/font/google";
 import { MotionController } from "@/components/motion-controller";
 import { SiteHeader } from "@/components/site-header";
 import { ThemeProvider } from "@/components/theme-provider";
-import { THEME_STORAGE_KEY } from "@/lib/theme";
+import {
+  DAY_START_HOUR,
+  DUSK_START_HOUR,
+  NIGHT_START_HOUR,
+  THEME_STORAGE_KEY,
+} from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -22,17 +22,10 @@ const display = Fraunces({
   axes: ["SOFT", "opsz"],
 });
 
-const notoSansSC = Noto_Sans_SC({
-  variable: "--font-cjk",
-  display: "swap",
-  preload: false,
-  adjustFontFallback: false,
-  fallback: ["PingFang SC", "Microsoft YaHei", "sans-serif"],
-});
-
+// Body text uses the system's Chinese font (see globals.css); only headings
+// load a CJK web font, and only the glyphs they actually use get downloaded.
 const notoSerifSC = Noto_Serif_SC({
   variable: "--font-serif",
-  weight: ["500", "600", "700"],
   display: "swap",
   preload: false,
   adjustFontFallback: false,
@@ -48,18 +41,31 @@ export const metadata: Metadata = {
     description: "喜欢锦明日海的普通大学生。写博客、学日语、玩贝斯、折腾服务器。",
     locale: "zh_CN",
     type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
   },
 };
 
+// Mirrors themeForHour() in lib/theme.ts; runs before paint so the right
+// scene shows immediately.
 const themeBootScript = `
-  try {
-    var theme = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
-    if (theme !== "ice" && theme !== "night") theme = "night";
+  (function () {
+    var preference = "auto";
+    try {
+      var stored = localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)});
+      if (["auto", "ice", "dusk", "night"].indexOf(stored) >= 0) preference = stored;
+    } catch (_) {}
+    var theme = preference;
+    if (preference === "auto") {
+      var hour = new Date().getHours();
+      theme = hour >= ${DAY_START_HOUR} && hour < ${DUSK_START_HOUR} ? "ice"
+        : hour >= ${DUSK_START_HOUR} && hour < ${NIGHT_START_HOUR} ? "dusk" : "night";
+    }
     document.documentElement.dataset.theme = theme;
-    document.documentElement.style.colorScheme = theme === "night" ? "dark" : "light";
-    document.documentElement.classList.toggle("theme-night", theme === "night");
-    document.documentElement.classList.toggle("theme-ice", theme === "ice");
-  } catch (_) {}
+    document.documentElement.style.colorScheme = theme === "ice" ? "light" : "dark";
+  })();
 `;
 
 export default function RootLayout({
@@ -71,7 +77,7 @@ export default function RootLayout({
     <html
       lang="zh-Hans"
       data-theme="night"
-      className={`${geistSans.variable} ${display.variable} ${notoSansSC.variable} ${notoSerifSC.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${display.variable} ${notoSerifSC.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
@@ -79,7 +85,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full bg-[color:var(--bg)] text-[color:var(--text)]">
         <ThemeProvider>
-          <a href="#blog" className="skip-link">
+          <a href="#main" className="skip-link">
             跳到正文
           </a>
           <MotionController />

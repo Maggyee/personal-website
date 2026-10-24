@@ -4,78 +4,107 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useSyncExternalStore,
 } from "react";
 import {
   THEME_CHANGE_EVENT,
   THEME_STORAGE_KEY,
+  type ThemeChangeDetail,
   type ThemeId,
-  isThemeId,
+  type ThemePreference,
+  isThemePreference,
+  nextPreference,
+  themeForHour,
 } from "@/lib/theme";
 
 type ThemeContextValue = {
+  preference: ThemePreference;
   theme: ThemeId;
-  setTheme: (theme: ThemeId) => void;
-  toggleTheme: () => void;
+  cycleTheme: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
+function readPreference(): ThemePreference {
+  try {
+    const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return isThemePreference(stored) ? stored : "auto";
+  } catch {
+    return "auto";
+  }
+}
+
+function resolveTheme(preference: ThemePreference): ThemeId {
+  return preference === "auto" ? themeForHour(new Date().getHours()) : preference;
+}
+
+// Returns true when the visible theme actually changed.
 function applyTheme(theme: ThemeId) {
   const root = document.documentElement;
+  if (root.dataset.theme === theme) return false;
   root.dataset.theme = theme;
-  root.style.colorScheme = theme === "night" ? "dark" : "light";
-  root.classList.toggle("theme-night", theme === "night");
-  root.classList.toggle("theme-ice", theme === "ice");
+  root.style.colorScheme = theme === "ice" ? "light" : "dark";
+  return true;
 }
 
-function getThemeSnapshot(): ThemeId {
-  if (typeof window === "undefined") return "night";
-  const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return isThemeId(stored) ? stored : "night";
+function announce(sceneChanged: boolean) {
+  window.dispatchEvent(
+    new CustomEvent<ThemeChangeDetail>(THEME_CHANGE_EVENT, { detail: { sceneChanged } }),
+  );
 }
 
-function getServerThemeSnapshot(): ThemeId {
-  return "night";
+// The shown theme lives on <html data-theme>, set before paint by the boot
+// script in layout.tsx; the snapshot pairs it with the stored preference.
+function getSnapshot() {
+  return `${readPreference()}:${document.documentElement.dataset.theme ?? "night"}`;
+}
+
+function getServerSnapshot() {
+  return "auto:night";
 }
 
 function subscribeToTheme(onStoreChange: () => void) {
-  const onThemeChange = () => onStoreChange();
   const onStorage = (event: StorageEvent) => {
     if (event.key !== THEME_STORAGE_KEY) return;
-    applyTheme(getThemeSnapshot());
-    onStoreChange();
+    announce(applyTheme(resolveTheme(readPreference())));
   };
-
-  window.addEventListener(THEME_CHANGE_EVENT, onThemeChange);
+  window.addEventListener(THEME_CHANGE_EVENT, onStoreChange);
   window.addEventListener("storage", onStorage);
   return () => {
-    window.removeEventListener(THEME_CHANGE_EVENT, onThemeChange);
+    window.removeEventListener(THEME_CHANGE_EVENT, onStoreChange);
     window.removeEventListener("storage", onStorage);
   };
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const theme = useSyncExternalStore(
-    subscribeToTheme,
-    getThemeSnapshot,
-    getServerThemeSnapshot,
-  );
+  const snapshot = useSyncExternalStore(subscribeToTheme, getSnapshot, getServerSnapshot);
+  const [preference, theme] = snapshot.split(":") as [ThemePreference, ThemeId];
 
-  const setTheme = useCallback((next: ThemeId) => {
-    applyTheme(next);
-    window.localStorage.setItem(THEME_STORAGE_KEY, next);
-    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
+  // In auto mode the scene follows the clock, so dusk arrives on its own.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const current = readPreference();
+      if (current === "auto" && applyTheme(resolveTheme(current))) announce(true);
+    }, 60_000);
+    return () => window.clearInterval(timer);
   }, []);
 
-  const toggleTheme = useCallback(() => {
-    setTheme(theme === "night" ? "ice" : "night");
-  }, [setTheme, theme]);
+  const cycleTheme = useCallback(() => {
+    const current = readPreference();
+    const next = nextPreference(current, resolveTheme(current));
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    } catch {
+      // Storage can be unavailable (private mode); the change still applies to this visit.
+    }
+    announce(applyTheme(resolveTheme(next)));
+  }, []);
 
   const value = useMemo(
-    () => ({ theme, setTheme, toggleTheme }),
-    [theme, setTheme, toggleTheme],
+    () => ({ preference, theme, cycleTheme }),
+    [preference, theme, cycleTheme],
   );
 
   return (

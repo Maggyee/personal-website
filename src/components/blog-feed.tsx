@@ -1,19 +1,26 @@
 import { SectionHeading } from "@/components/section-heading";
 import { profile } from "@/content/profile";
-import { getJapaneseColumn, getRecentPosts } from "@/lib/blog";
+import { getBlogFeed, getJapaneseColumn } from "@/lib/blog";
 
 const formatDate = (date: string) => date.slice(0, 10).replaceAll("-", ".");
+const lessonName = (title: string) => title.replace("明日海の日本語教室", "").trim();
 
 export async function BlogFeed() {
-  const [posts, column] = await Promise.all([getRecentPosts(), getJapaneseColumn()]);
+  const [feed, column] = await Promise.all([getBlogFeed(), getJapaneseColumn()]);
+  const posts = feed?.posts;
 
   return (
     <section id="blog" className="page-section">
       <div className="site-container">
         <SectionHeading
           jp="ブログ"
-          title="最近在写"
-          intro="日语笔记、玩机折腾和生活碎碎念，都在博客里。"
+          title={feed?.stale ? "从博客里翻出来的" : "最近在写"}
+          mark="Blog"
+          intro={
+            feed?.stale
+              ? "日语笔记、玩机折腾和生活碎碎念，每天换几篇。"
+              : "日语笔记、玩机折腾和生活碎碎念，都在博客里。"
+          }
           action={
             <a
               href={profile.blogUrl}
@@ -27,12 +34,7 @@ export async function BlogFeed() {
         />
 
         <div className="blog-grid">
-          <a
-            href={column?.link ?? profile.blogUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="column-card glass-card reveal-motion"
-          >
+          <div className="column-card glass-card reveal-motion">
             <span className="column-kana" aria-hidden>
               あ
             </span>
@@ -42,20 +44,39 @@ export async function BlogFeed() {
               跟着明日海一起学日语的每日笔记
               {column?.lessons ? `，已经写到 Day ${column.lessons}` : ""}。
             </p>
+            {column?.review ? (
+              <a
+                href={column.review.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="column-review"
+              >
+                <span className="column-review-label">今日复习</span>
+                <span className="column-review-title">{lessonName(column.review.title)}</span>
+                <span aria-hidden>↗</span>
+              </a>
+            ) : null}
             {column?.recent.length ? (
               <ol className="column-lessons" aria-label="最近几课">
                 {column.recent.map((lesson) => (
                   <li key={lesson.id}>
-                    <time dateTime={lesson.date}>{formatDate(lesson.date).slice(5)}</time>
-                    <span>{lesson.title.replace("明日海の日本語教室", "").trim()}</span>
+                    <a href={lesson.link} target="_blank" rel="noopener noreferrer">
+                      <time dateTime={lesson.date}>{formatDate(lesson.date).slice(5)}</time>
+                      <span>{lessonName(lesson.title)}</span>
+                    </a>
                   </li>
                 ))}
               </ol>
             ) : null}
-            <span className="column-cta">
+            <a
+              href={column?.link ?? profile.blogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="column-cta"
+            >
               进入专栏<span aria-hidden> ↗</span>
-            </span>
-          </a>
+            </a>
+          </div>
 
           {posts && posts.length > 0 ? (
             <ol className="post-list">

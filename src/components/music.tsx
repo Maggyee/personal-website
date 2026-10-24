@@ -33,6 +33,7 @@ export function Music() {
         <SectionHeading
           jp="ベース"
           title="低音区"
+          mark="Bass"
           intro="和贝斯有关的视频之后会放在这里。在那之前，先拨两下弦吧。"
         />
 

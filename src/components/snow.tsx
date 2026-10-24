@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { THEME_CHANGE_EVENT } from "@/lib/theme";
+import { THEME_CHANGE_EVENT, type ThemeChangeDetail } from "@/lib/theme";
 
 type Flake = {
   x: number;
@@ -36,7 +36,9 @@ function makeSprite(soft: boolean, day: boolean) {
   return sprite;
 }
 
-export function Snow({ layer }: { layer: "back" | "front" }) {
+type Layer = "back" | "front" | "page";
+
+export function Snow({ layer }: { layer: Layer }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -46,6 +48,11 @@ export function Snow({ layer }: { layer: "back" | "front" }) {
     if (!ctx) return;
 
     const front = layer === "front";
+    // The page layer sits behind every section; it only runs once the hero
+    // (which has its own snow) has mostly scrolled away.
+    const page = layer === "page";
+    const pastHero = () =>
+      !page || !document.getElementById("hero") || window.scrollY > window.innerHeight * 0.55;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const isDay = () => document.documentElement.dataset.theme === "ice";
     let sprite = makeSprite(front, isDay());
@@ -59,9 +66,11 @@ export function Snow({ layer }: { layer: "back" | "front" }) {
     let wind = 0;
     let gust = 0;
     let lastPointerX: number | null = null;
+    let lastScrollY = window.scrollY;
 
     const targetCount = () => {
       if (front) return Math.max(4, Math.round(width / 160));
+      if (page) return Math.min(70, Math.max(24, Math.round((width * height) / 22000)));
       return Math.min(170, Math.max(45, Math.round((width * height) / 8500)));
     };
 
@@ -75,7 +84,7 @@ export function Snow({ layer }: { layer: "back" | "front" }) {
         speed: front ? 70 + depth * 70 : 18 + depth * 52,
         sway: 0.4 + Math.random() * 1.2,
         phase: Math.random() * Math.PI * 2,
-        alpha: front ? 0.28 + depth * 0.3 : 0.35 + depth * 0.6,
+        alpha: front ? 0.28 + depth * 0.3 : page ? 0.2 + depth * 0.45 : 0.35 + depth * 0.6,
         depth,
         burst,
       };
@@ -125,6 +134,7 @@ export function Snow({ layer }: { layer: "back" | "front" }) {
           }
           Object.assign(flake, createFlake(true), { y: -flake.r });
         }
+        if (flake.y < -flake.r * 2) flake.y = height + flake.r;
         if (flake.x > width + flake.r) flake.x = -flake.r;
         if (flake.x < -flake.r) flake.x = width + flake.r;
       }
@@ -134,7 +144,7 @@ export function Snow({ layer }: { layer: "back" | "front" }) {
     };
 
     const start = () => {
-      if (frame || reduceMotion.matches || !onScreen || document.hidden) return;
+      if (frame || reduceMotion.matches || !onScreen || document.hidden || !pastHero()) return;
       lastTime = 0;
       frame = window.requestAnimationFrame(tick);
     };
@@ -148,10 +158,22 @@ export function Snow({ layer }: { layer: "back" | "front" }) {
       if (reduceMotion.matches) {
         stop();
         ctx.clearRect(0, 0, width, height);
-      } else if (onScreen && !document.hidden) {
+      } else if (onScreen && !document.hidden && pastHero()) {
         start();
       } else {
         stop();
+        if (page) ctx.clearRect(0, 0, width, height);
+      }
+    };
+
+    // Scrolling moves the flakes against the scroll direction, nearer flakes
+    // faster, so the page feels like walking through falling snow.
+    const onScroll = () => {
+      const delta = window.scrollY - lastScrollY;
+      lastScrollY = window.scrollY;
+      if (page) {
+        for (const flake of flakes) flake.y -= delta * (0.2 + flake.depth * 0.55);
+        sync();
       }
     };
 
@@ -163,11 +185,12 @@ export function Snow({ layer }: { layer: "back" | "front" }) {
       lastPointerX = event.clientX;
     };
 
-    const onThemeChange = () => {
+    const onThemeChange = (event: Event) => {
+      if (!(event as CustomEvent<ThemeChangeDetail>).detail?.sceneChanged) return;
       sprite = makeSprite(front, isDay());
       if (reduceMotion.matches) return;
       gust = (Math.random() > 0.5 ? 1 : -1) * 150;
-      const extra = front ? 6 : 70;
+      const extra = front ? 6 : page ? 30 : 70;
       for (let i = 0; i < extra; i += 1) flakes.push(createFlake(true, true));
     };
 
@@ -181,6 +204,7 @@ export function Snow({ layer }: { layer: "back" | "front" }) {
     observer.observe(canvas);
     resizeObserver.observe(canvas);
     window.addEventListener("pointermove", onPointerMove, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener(THEME_CHANGE_EVENT, onThemeChange);
     document.addEventListener("visibilitychange", sync);
     reduceMotion.addEventListener("change", sync);
@@ -191,6 +215,7 @@ export function Snow({ layer }: { layer: "back" | "front" }) {
       observer.disconnect();
       resizeObserver.disconnect();
       window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("scroll", onScroll);
       window.removeEventListener(THEME_CHANGE_EVENT, onThemeChange);
       document.removeEventListener("visibilitychange", sync);
       reduceMotion.removeEventListener("change", sync);

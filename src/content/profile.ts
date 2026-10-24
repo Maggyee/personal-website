@@ -27,6 +27,12 @@ export const greetings = [
   "再戳也不会掉东西的啦。",
 ] as const;
 
+// Said once when the visitor starts scrolling down, and on returning to the top.
+export const scrollLines = {
+  leaving: "往下还有好多东西哦～",
+  back: "欢迎回来～",
+} as const;
+
 export const credits = [
   { label: "立绘", value: "《ハミダシクリエイティブ》© まどそふと" },
   { label: "背景", value: "みんちりえ", href: "https://min-chi.material.jp/" },

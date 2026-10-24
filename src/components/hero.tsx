@@ -14,12 +14,22 @@ export function Hero() {
 
       <div className="scene" aria-hidden>
         <div className="scene-frame">
+          {/* The same street at three times of day; the theme decides which shows. */}
           <Image
             src="/scene/street-day.jpg"
             alt=""
             fill
+            loading="eager"
             sizes="(max-aspect-ratio: 16/9) 178vh, 100vw"
             className="scene-img scene-day"
+          />
+          <Image
+            src="/scene/street-dusk.jpg"
+            alt=""
+            fill
+            loading="eager"
+            sizes="(max-aspect-ratio: 16/9) 178vh, 100vw"
+            className="scene-img scene-dusk"
           />
           <Image
             src="/scene/street-night.jpg"
@@ -33,7 +43,11 @@ export function Hero() {
           <span className="scene-lamp-pool" />
           <span className="scene-lamp-far" />
         </div>
-        <div className="scene-shade" />
+        <div className="scene-shade">
+          <span className="shade-ice" />
+          <span className="shade-dusk" />
+          <span className="shade-night" />
+        </div>
       </div>
 
       <Snow layer="back" />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { THEME_CHANGE_EVENT } from "@/lib/theme";
+import { THEME_CHANGE_EVENT, type ThemeChangeDetail } from "@/lib/theme";
 
 export function MotionController() {
   useEffect(() => {
@@ -24,6 +24,11 @@ export function MotionController() {
     // variables (--mx, --my, --scroll) and the stylesheet decides what moves.
     const tick = () => {
       frame = 0;
+      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+      root.style.setProperty(
+        "--page-progress",
+        (scrollable > 0 ? Math.min(1, window.scrollY / scrollable) : 0).toFixed(4),
+      );
       if (!hero || reduceMotion.matches) return;
       const range = Math.max(hero.offsetHeight, 1);
       const nextScroll = Math.min(1, Math.max(0, window.scrollY / range));
@@ -43,7 +48,7 @@ export function MotionController() {
     };
 
     const schedule = () => {
-      if (!frame && !reduceMotion.matches) frame = window.requestAnimationFrame(tick);
+      if (!frame) frame = window.requestAnimationFrame(tick);
     };
 
     const onPointerMove = (event: PointerEvent) => {
@@ -53,7 +58,8 @@ export function MotionController() {
       schedule();
     };
 
-    const onThemeChange = () => {
+    const onThemeChange = (event: Event) => {
+      if (!(event as CustomEvent<ThemeChangeDetail>).detail?.sceneChanged) return;
       if (!hero || reduceMotion.matches) return;
       hero.classList.remove("is-switching");
       // Restart the scene transition even on rapid toggles.
@@ -99,6 +105,7 @@ export function MotionController() {
         hero?.style.removeProperty("--mx");
         hero?.style.removeProperty("--my");
         hero?.style.removeProperty("--scroll");
+        schedule();
       } else {
         enableReveals();
         schedule();

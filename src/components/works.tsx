@@ -63,6 +63,7 @@ export function Works() {
         <SectionHeading
           jp="つくったもの"
           title="做过的小东西"
+          mark="Works"
           intro="平时顺手做的几个小东西，代码都在 GitHub 上。"
         />
 
@@ -77,17 +78,19 @@ export function Works() {
               style={{ "--stagger": index } as React.CSSProperties}
             >
               <div className="work-cover">
-                {work.cover ? (
-                  <Image
-                    src={work.cover}
-                    alt={work.coverAlt}
-                    fill
-                    sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 400px"
-                    className="work-cover-img"
-                  />
-                ) : (
-                  <TraderCover />
-                )}
+                <div className="work-cover-parallax">
+                  {work.cover ? (
+                    <Image
+                      src={work.cover}
+                      alt={work.coverAlt}
+                      fill
+                      sizes="(max-width: 767px) 100vw, (max-width: 1279px) 50vw, 400px"
+                      className="work-cover-img"
+                    />
+                  ) : (
+                    <TraderCover />
+                  )}
+                </div>
               </div>
               <div className="work-body">
                 <p className="work-stack">{work.stack}</p>

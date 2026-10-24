@@ -1,16 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { useTheme } from "@/components/theme-provider";
+import Link from "next/link";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { LiquidGlass } from "@/components/liquid-glass";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { profile } from "@/content/profile";
-import { themes } from "@/lib/theme";
 
 const nav = [
-  { href: "#blog", id: "blog", label: "文章" },
-  { href: "#music", id: "music", label: "低音区" },
-  { href: "#works", id: "works", label: "小东西" },
-  { href: "#about", id: "about", label: "关于" },
+  { href: "/#blog", id: "blog", label: "文章" },
+  { href: "/#music", id: "music", label: "低音区" },
+  { href: "/#works", id: "works", label: "小东西" },
+  { href: "/#about", id: "about", label: "关于" },
   { href: profile.blogUrl, label: "博客", external: true },
 ] as const;
 
@@ -20,7 +21,48 @@ export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState("hero");
-  const { theme, toggleTheme } = useTheme();
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const pillRef = useRef<HTMLSpanElement>(null);
+  const pillLeft = useRef<number | null>(null);
+
+  const activeIndex = nav.findIndex((item) => "id" in item && item.id === activeId);
+  const pillIndex = hoverIndex ?? activeIndex;
+
+  // The nav pill slides like a droplet: the leading edge moves first and the
+  // trailing edge catches up, so it stretches on the way and settles.
+  useLayoutEffect(() => {
+    const navEl = navRef.current;
+    const pill = pillRef.current;
+    if (!navEl || !pill) return;
+
+    const place = (animate: boolean) => {
+      const link = navEl.querySelectorAll<HTMLElement>(".nav-link")[pillIndex];
+      if (!link) {
+        pill.dataset.visible = "false";
+        pillLeft.current = null;
+        return;
+      }
+      const left = link.offsetLeft;
+      const right = navEl.clientWidth - left - link.offsetWidth;
+      const previous = pillLeft.current;
+      const movingRight = previous === null || left > previous;
+      const lead = animate && previous !== null ? "0.28s" : "0s";
+      const trail = animate && previous !== null ? "0.5s" : "0s";
+      pill.style.setProperty("--pill-dl", movingRight ? trail : lead);
+      pill.style.setProperty("--pill-dr", movingRight ? lead : trail);
+      pill.style.setProperty("--pill-l", `${left}px`);
+      pill.style.setProperty("--pill-r", `${right}px`);
+      pill.dataset.visible = "true";
+      pillLeft.current = left;
+    };
+
+    place(true);
+    const observer = new ResizeObserver(() => place(false));
+    observer.observe(navEl);
+    return () => observer.disconnect();
+  }, [pillIndex]);
 
   useEffect(() => {
     const sentinel = document.getElementById("header-scroll-sentinel");
@@ -77,14 +119,17 @@ export function SiteHeader() {
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-4">
       <div
+        ref={shellRef}
         className={[
-          "header-shell pointer-events-auto glass-panel mx-auto flex w-full max-w-7xl items-center justify-between gap-3 rounded-full px-3 py-2 sm:px-4",
-          scrolled ? "header-glass-dense" : "header-glass-soft",
+          "header-shell pointer-events-auto mx-auto flex w-full items-center justify-between gap-3 rounded-full px-3 py-2 sm:px-4",
+          scrolled ? "is-compact" : "",
         ].join(" ")}
       >
-        <a
-          href="#hero"
-          className="brand-lockup flex min-w-0 shrink-0 items-center gap-3 pl-1"
+        <LiquidGlass targetRef={shellRef} />
+        <span className="header-progress" aria-hidden />
+        <Link
+          href="/#hero"
+          className="brand-lockup relative flex min-w-0 shrink-0 items-center gap-3 pl-1"
           aria-current={activeId === "hero" ? "true" : undefined}
         >
           <span className="brand-avatar-shell">
@@ -98,10 +143,16 @@ export function SiteHeader() {
             />
           </span>
           <span className="brand-wordmark">{profile.name}</span>
-        </a>
+        </Link>
 
-        <nav className="hidden items-center gap-1 text-sm md:flex" aria-label="页面区块">
-          {nav.map((item) =>
+        <nav
+          ref={navRef}
+          className="header-nav hidden items-center gap-1 text-sm md:flex"
+          aria-label="页面区块"
+          onPointerLeave={() => setHoverIndex(null)}
+        >
+          <span ref={pillRef} className="nav-pill" data-visible="false" aria-hidden />
+          {nav.map((item, index) =>
             "external" in item && item.external ? (
               <a
                 key={item.label}
@@ -109,6 +160,9 @@ export function SiteHeader() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="nav-link rounded-full px-3 py-2 transition-colors"
+                onPointerEnter={() => setHoverIndex(index)}
+                onFocus={() => setHoverIndex(index)}
+                onBlur={() => setHoverIndex(null)}
               >
                 {item.label}
                 <span className="external-mark" aria-hidden>
@@ -116,53 +170,23 @@ export function SiteHeader() {
                 </span>
               </a>
             ) : (
-              <a
+              <Link
                 key={item.label}
                 href={item.href}
                 className="nav-link rounded-full px-3 py-2 transition-colors"
                 aria-current={"id" in item && item.id === activeId ? "true" : undefined}
+                onPointerEnter={() => setHoverIndex(index)}
+                onFocus={() => setHoverIndex(index)}
+                onBlur={() => setHoverIndex(null)}
               >
                 {item.label}
-              </a>
+              </Link>
             ),
           )}
         </nav>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="theme-toggle"
-            data-theme={theme}
-            aria-label={`切换主题，当前：${themes[theme].label}`}
-            title={`切换到${themes[theme === "night" ? "ice" : "night"].label}`}
-          >
-            <span className="theme-toggle-thumb" aria-hidden />
-            <svg
-              className="theme-toggle-icon theme-toggle-sun"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              aria-hidden
-            >
-              <circle cx="12" cy="12" r="3.25" />
-              <path d="M12 2.75v2M12 19.25v2M4.25 12h-2M21.75 12h-2M5.17 5.17l1.42 1.42M17.41 17.41l1.42 1.42M18.83 5.17l-1.42 1.42M6.59 17.41l-1.42 1.42" />
-            </svg>
-            <svg
-              className="theme-toggle-icon theme-toggle-moon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M18.2 16.2A7.2 7.2 0 0 1 9 6.7a7.4 7.4 0 1 0 9.2 9.5Z" />
-            </svg>
-          </button>
+        <div className="relative flex items-center gap-2">
+          <ThemeToggle />
 
           <button
             type="button"
@@ -207,7 +231,7 @@ export function SiteHeader() {
                   </span>
                 </a>
               ) : (
-                <a
+                <Link
                   key={item.label}
                   href={item.href}
                   className="rounded-xl px-3 py-3 text-[color:var(--text)] transition-colors duration-200 hover:bg-[color:var(--text)]/5"
@@ -215,7 +239,7 @@ export function SiteHeader() {
                   onClick={() => setOpen(false)}
                 >
                   {item.label}
-                </a>
+                </Link>
               ),
             )}
             </div>

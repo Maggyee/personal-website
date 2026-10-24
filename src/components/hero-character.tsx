@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { greetings } from "@/content/profile";
+import { greetings, scrollLines } from "@/content/profile";
 
 const INTRO_DELAY = 1900;
 const LINE_DURATION = 4200;
@@ -13,13 +13,42 @@ export function HeroCharacter() {
   const lineIndex = useRef(0);
   const hideTimer = useRef(0);
 
-  const say = (index: number) => {
-    lineIndex.current = index;
-    setLine(greetings[index]);
+  const show = (text: string) => {
+    setLine(text);
     setVisible(true);
     window.clearTimeout(hideTimer.current);
     hideTimer.current = window.setTimeout(() => setVisible(false), LINE_DURATION);
   };
+
+  const say = (index: number) => {
+    lineIndex.current = index;
+    show(greetings[index]);
+  };
+
+  const showRef = useRef(show);
+  useEffect(() => {
+    showRef.current = show;
+  });
+
+  useEffect(() => {
+    let saidLeaving = false;
+    let away = false;
+    const onScroll = () => {
+      const progress = window.scrollY / window.innerHeight;
+      // Early enough that the bubble is still on screen.
+      if (!saidLeaving && progress > 0.04 && progress < 0.5) {
+        saidLeaving = true;
+        showRef.current(scrollLines.leaving);
+      }
+      if (progress > 1.2) away = true;
+      if (away && progress < 0.08) {
+        away = false;
+        showRef.current(scrollLines.back);
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     const timers = hideTimer;

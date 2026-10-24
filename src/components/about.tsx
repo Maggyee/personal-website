@@ -21,7 +21,7 @@ export function About() {
   return (
     <section id="about" className="page-section">
       <div className="site-container">
-        <SectionHeading jp="わたし" title="关于" />
+        <SectionHeading jp="わたし" title="关于" mark="Hello" />
 
         <div className="about-layout">
           <figure className="about-portrait reveal-motion" aria-hidden>
